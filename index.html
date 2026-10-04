@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <title>คำนวณเกรด</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 18px;
+      font-family: system-ui, sans-serif;
+      color: #1f2937;
+      background: linear-gradient(145deg, #e0e7ff, #f5f3ff);
+    }
+
+    .app {
+      width: 100%;
+      max-width: 520px;
+      margin: auto;
+      padding: 24px;
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 15px 40px rgba(49, 46, 129, 0.16);
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      color: #3730a3;
+      font-size: 27px;
+    }
+
+    .subtitle {
+      margin: 0 0 22px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      font-size: 17px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px #e0e7ff;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 14px;
+      border: 0;
+      border-radius: 13px;
+      color: white;
+      background: #4f46e5;
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .error {
+      display: none;
+      margin-top: 15px;
+      padding: 12px;
+      color: #b91c1c;
+      background: #fef2f2;
+      border-radius: 12px;
+    }
+
+    .results {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .result {
+      padding: 17px;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 16px;
+    }
+
+    .result.target {
+      background: #f5f3ff;
+      border-color: #ddd6fe;
+    }
+
+    .label {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .value {
+      margin-top: 3px;
+      color: #3730a3;
+      font-size: 32px;
+      font-weight: 900;
+    }
+
+    .detail {
+      margin-top: 5px;
+      color: #4b5563;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .possible { color: #047857; }
+    .impossible { color: #b45309; }
+
+    .note {
+      margin-top: 18px;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 430px) {
+      .grid { grid-template-columns: 1fr; }
+      .app { padding: 20px; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <h1>คำนวณเกรดมหาวิทยาลัย</h1>
+    <p class="subtitle">
+      คำนวณ GPA สะสมใหม่ และเกรดที่ต้องทำให้ได้ตามเป้าหมาย
+    </p>
+
+    <section class="grid">
+      <div>
+        <label for="oldCredits">หน่วยกิตสะสมเดิม</label>
+        <input id="oldCredits" type="number" value="100" min="0" step="1">
+      </div>
+
+      <div>
+        <label for="oldGpa">GPA สะสมเดิม</label>
+        <input id="oldGpa" type="number" value="2.22" min="0" max="4" step="0.01">
+      </div>
+
+      <div>
+        <label for="termCredits">หน่วยกิตเทอมนี้</label>
+        <input id="termCredits" type="number" value="22" min="1" step="1">
+      </div>
+
+      <div>
+        <label for="termGpa">GPA เทอมนี้</label>
+        <input id="termGpa" type="number" value="3.33" min="0" max="4" step="0.01">
+      </div>
+
+      <div>
+        <label for="targetGpa">GPA สะสมเป้าหมาย</label>
+        <input id="targetGpa" type="number" value="3.00" min="0" max="4" step="0.01">
+      </div>
+
+      <div>
+        <label for="maxGpa">เกรดสูงสุด</label>
+        <input id="maxGpa" type="number" value="4.00" min="1" step="0.01">
+      </div>
+    </section>
+
+    <button type="button" onclick="calculate()">คำนวณเกรด</button>
+
+    <div id="error" class="error"></div>
+
+    <section class="results">
+      <div class="result">
+        <div class="label">GPA สะสมหลังจบเทอม</div>
+        <div id="newGpa" class="value">2.42</div>
+        <div id="newDetail" class="detail"></div>
+      </div>
+
+      <div class="result target">
+        <div class="label">GPA เทอมนี้ที่ต้องได้เพื่อถึงเป้าหมาย</div>
+        <div id="requiredGpa" class="value">6.54</div>
+        <div id="targetDetail" class="detail impossible"></div>
+      </div>
+
+      <div class="result">
+        <div class="label">GPA สะสมสูงสุดหลังเทอมนี้</div>
+        <div id="maximumGpa" class="value">2.54</div>
+        <div id="maximumDetail" class="detail"></div>
+      </div>
+    </section>
+
+    <p class="note">
+      ผลลัพธ์แสดงทศนิยม 2 ตำแหน่งโดยตัดเลขส่วนเกินออกและไม่ปัดเศษ
+      ข้อมูลที่กรอกจะถูกบันทึกไว้ในโทรศัพท์เครื่องนี้
+    </p>
+  </main>
+
+  <script>
+    const inputIds = [
+      "oldCredits",
+      "oldGpa",
+      "termCredits",
+      "termGpa",
+      "targetGpa",
+      "maxGpa"
+    ];
+
+    function truncate2(number) {
+      return Math.trunc((number + 0.0000000001) * 100) / 100;
+    }
+
+    function format2(number) {
+      return truncate2(number).toFixed(2);
+    }
+
+    function valueOf(id) {
+      return Number.parseFloat(document.getElementById(id).value);
+    }
+
+    function showError(message) {
+      const error = document.getElementById("error");
+      error.textContent = message;
+      error.style.display = "block";
+    }
+
+    function calculate() {
+      const oldCredits = valueOf("oldCredits");
+      const oldGpa = valueOf("oldGpa");
+      const termCredits = valueOf("termCredits");
+      const termGpa = valueOf("termGpa");
+      const targetGpa = valueOf("targetGpa");
+      const maxGpa = valueOf("maxGpa");
+      const error = document.getElementById("error");
+
+      const numbers = [
+        oldCredits,
+        oldGpa,
+        termCredits,
+        termGpa,
+        targetGpa,
+        maxGpa
+      ];
+
+      if (numbers.some(Number.isNaN)) {
+        showError("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+        return;
+      }
+
+      if (oldCredits < 0 || termCredits <= 0 || maxGpa <= 0) {
+        showError("กรุณาตรวจสอบจำนวนหน่วยกิตและเกรดสูงสุด");
+        return;
+      }
+
+      if (
+        oldGpa < 0 || oldGpa > maxGpa ||
+        termGpa < 0 || termGpa > maxGpa ||
+        targetGpa < 0 || targetGpa > maxGpa
+      ) {
+        showError(`GPA ต้องอยู่ระหว่าง 0.00 ถึง ${format2(maxGpa)}`);
+        return;
+      }
+
+      error.style.display = "none";
+
+      const totalCredits = oldCredits + termCredits;
+      const oldPoints = oldCredits * oldGpa;
+
+      const newGpa =
+        (oldPoints + termCredits * termGpa) / totalCredits;
+
+      const requiredGpa =
+        ((targetGpa * totalCredits) - oldPoints) / termCredits;
+
+      const maximumGpa =
+        (oldPoints + termCredits * maxGpa) / totalCredits;
+
+      document.getElementById("newGpa").textContent =
+        format2(newGpa);
+
+      document.getElementById("newDetail").textContent =
+        `หน่วยกิตรวมหลังจบเทอม ${totalCredits} หน่วยกิต`;
+
+      document.getElementById("maximumGpa").textContent =
+        format2(maximumGpa);
+
+      document.getElementById("maximumDetail").textContent =
+        `กรณีเทอมนี้ทำ GPA ได้ ${format2(maxGpa)}`;
+
+      const requiredElement =
+        document.getElementById("requiredGpa");
+
+      const detailElement =
+        document.getElementById("targetDetail");
+
+      if (requiredGpa <= 0) {
+        requiredElement.textContent = "0.00";
+        detailElement.textContent =
+          `ขณะนี้ GPA สะสมถึงเป้าหมาย ${format2(targetGpa)} แล้ว`;
+        detailElement.className = "detail possible";
+      } else {
+        requiredElement.textContent = format2(requiredGpa);
+
+        if (requiredGpa > maxGpa) {
+          detailElement.textContent =
+            `ยังไม่สามารถถึงเป้าหมาย ${format2(targetGpa)} ภายในเทอมนี้ เพราะต้องได้เกิน ${format2(maxGpa)}`;
+          detailElement.className = "detail impossible";
+        } else {
+          detailElement.textContent =
+            `สามารถทำถึงเป้าหมาย ${format2(targetGpa)} ได้ในเทอมนี้`;
+          detailElement.className = "detail possible";
+        }
+      }
+
+      inputIds.forEach(id => {
+        localStorage.setItem(id, document.getElementById(id).value);
+      });
+    }
+
+    inputIds.forEach(id => {
+      const savedValue = localStorage.getItem(id);
+
+      if (savedValue !== null) {
+        document.getElementById(id).value = savedValue;
+      }
+
+      document.getElementById(id).addEventListener("change", calculate);
+    });
+
+    calculate();
+  </script>
+</body>
+</html>
